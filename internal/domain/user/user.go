@@ -1,97 +1,128 @@
 package user
 
 import (
-  "errors"
-  "regexp"
+	"errors"
+	"time"
 )
 
-// User Entity - represents a library user
+type UserStatus string
+
+const (
+	UserStatusActive    UserStatus = "active"
+	UserStatusSuspended UserStatus = "suspended"
+)
+
 type User struct {
-  id               *UserId
-  name             string
-  email            string
-  currentLoanCount int
-  hasOverdueBooks  bool
+	id                 *UserId
+	name               string
+	email              string
+	status             UserStatus
+	currentBorrowCount int
+	overdueFees        float64
+	createdAt          time.Time
 }
 
-const MaxLoans = 5
+const MaxBorrowLimit = 5
 
-func NewUser(
-  id *UserId,
-  name string,
-  email string,
-  currentLoanCount int,
-  hasOverdueBooks bool,
-) (*User, error) {
-  if len(name) == 0 {
-    return nil, errors.New("name cannot be empty")
-  }
-
-  if !isValidEmail(email) {
-    return nil, errors.New("invalid email format")
-  }
-
-  if currentLoanCount < 0 {
-    return nil, errors.New("loan count cannot be negative")
-  }
-
-  return &User{
-    id:               id,
-    name:             name,
-    email:            email,
-    currentLoanCount: currentLoanCount,
-    hasOverdueBooks:  hasOverdueBooks,
-  }, nil
+// NewUser creates a new active user
+func NewUser(name, email string) *User {
+	return &User{
+		id:                 GenerateUserId(),
+		name:               name,
+		email:              email,
+		status:             UserStatusActive,
+		currentBorrowCount: 0,
+		overdueFees:        0,
+		createdAt:          time.Now(),
+	}
 }
 
-func isValidEmail(email string) bool {
-  re := regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
-  return re.MatchString(email)
+// ReconstructUser rebuilds user from persistence
+func ReconstructUser(
+	id *UserId,
+	name, email string,
+	status UserStatus,
+	currentBorrowCount int,
+	overdueFees float64,
+	createdAt time.Time,
+) *User {
+	return &User{id, name, email, status, currentBorrowCount, overdueFees, createdAt}
 }
 
-func (u *User) CanBorrowMore() bool {
-  return u.currentLoanCount < MaxLoans
+func (u *User) CanBorrow() bool {
+	if u.status == UserStatusSuspended {
+		return false
+	}
+	if u.currentBorrowCount >= MaxBorrowLimit {
+		return false
+	}
+	if u.overdueFees > 0 {
+		return false
+	}
+	return true
 }
 
-func (u *User) IncrementLoanCount() {
-  u.currentLoanCount++
+func (u *User) BorrowBook() (*User, error) {
+	if !u.CanBorrow() {
+		return nil, errors.New("user cannot borrow more books")
+	}
+	return &User{
+		id:                 u.id,
+		name:               u.name,
+		email:              u.email,
+		status:             u.status,
+		currentBorrowCount: u.currentBorrowCount + 1,
+		overdueFees:        u.overdueFees,
+		createdAt:          u.createdAt,
+	}, nil
 }
 
-func (u *User) DecrementLoanCount() {
-  if u.currentLoanCount > 0 {
-    u.currentLoanCount--
-  }
+func (u *User) ReturnBook() (*User, error) {
+	if u.currentBorrowCount == 0 {
+		return nil, errors.New("user has no books to return")
+	}
+	return &User{
+		id:                 u.id,
+		name:               u.name,
+		email:              u.email,
+		status:             u.status,
+		currentBorrowCount: u.currentBorrowCount - 1,
+		overdueFees:        u.overdueFees,
+		createdAt:          u.createdAt,
+	}, nil
 }
 
-func (u *User) MarkAsHavingOverdueBooks() {
-  u.hasOverdueBooks = true
+func (u *User) AddOverdueFee(amount float64) (*User, error) {
+	if amount < 0 {
+		return nil, errors.New("overdue fee cannot be negative")
+	}
+	return &User{
+		id:                 u.id,
+		name:               u.name,
+		email:              u.email,
+		status:             u.status,
+		currentBorrowCount: u.currentBorrowCount,
+		overdueFees:        u.overdueFees + amount,
+		createdAt:          u.createdAt,
+	}, nil
 }
 
-func (u *User) ClearOverdueBooks() {
-  u.hasOverdueBooks = false
+func (u *User) Suspend() *User {
+	return &User{
+		id:                 u.id,
+		name:               u.name,
+		email:              u.email,
+		status:             UserStatusSuspended,
+		currentBorrowCount: u.currentBorrowCount,
+		overdueFees:        u.overdueFees,
+		createdAt:          u.createdAt,
+	}
 }
 
 // Getters
-func (u *User) GetId() *UserId {
-  return u.id
-}
-
-func (u *User) GetName() string {
-  return u.name
-}
-
-func (u *User) GetEmail() string {
-  return u.email
-}
-
-func (u *User) GetCurrentLoanCount() int {
-  return u.currentLoanCount
-}
-
-func (u *User) HasOverdueBooks() bool {
-  return u.hasOverdueBooks
-}
-
-func (u *User) GetMaxLoans() int {
-  return MaxLoans
-}
+func (u *User) Id() *UserId { return u.id }
+func (u *User) Name() string { return u.name }
+func (u *User) Email() string { return u.email }
+func (u *User) Status() UserStatus { return u.status }
+func (u *User) CurrentBorrowCount() int { return u.currentBorrowCount }
+func (u *User) OverdueFees() float64 { return u.overdueFees }

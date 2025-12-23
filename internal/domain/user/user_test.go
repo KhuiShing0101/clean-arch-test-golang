@@ -5,49 +5,39 @@ import (
 	"library-management/internal/domain/user"
 )
 
-func TestCanCreateValidUser(t *testing.T) {
-	// Create Value Object
-	userId, _ := user.NewUserId("user-123")
+func TestUserId(t *testing.T) {
+	t.Run("Create", func(t *testing.T) {
+		// Valid 8-digit ID
+		userId, err := user.NewUserId("12345678")
+		if err != nil {
+			t.Fatalf("Failed to create valid UserId: %v", err)
+		}
+		if userId.Value() != "12345678" {
+			t.Errorf("Expected ID '12345678', got '%s'", userId.Value())
+		}
+	})
 
-	u, err := user.NewUser(userId, "John Doe", "john@example.com", 0, false)
-	if err != nil {
-		t.Fatalf("Failed to create user: %v", err)
-	}
+	t.Run("ValidateFormat", func(t *testing.T) {
+		// Invalid: not 8 digits
+		_, err := user.NewUserId("123")
+		if err == nil {
+			t.Error("Expected error for non-8-digit UserId")
+		}
 
-	if u.GetId().GetValue() != "user-123" {
-		t.Errorf("Expected ID 'user-123', got '%s'", u.GetId().GetValue())
-	}
-	if u.GetName() != "John Doe" {
-		t.Errorf("Expected name 'John Doe', got '%s'", u.GetName())
-	}
-	if u.GetEmail() != "john@example.com" {
-		t.Errorf("Expected email 'john@example.com', got '%s'", u.GetEmail())
-	}
-}
+		// Invalid: contains letters
+		_, err = user.NewUserId("1234abcd")
+		if err == nil {
+			t.Error("Expected error for non-numeric UserId")
+		}
+	})
 
-func TestInvalidEmailReturnsError(t *testing.T) {
-	userId, _ := user.NewUserId("user-123")
-
-	_, err := user.NewUser(userId, "John Doe", "invalid-email", 0, false)
-	if err == nil {
-		t.Error("Expected error for invalid email")
-	}
-}
-
-func TestCannotBorrowMoreWhenMaxLoansReached(t *testing.T) {
-	userId, _ := user.NewUserId("user-123")
-	u, _ := user.NewUser(userId, "John Doe", "john@example.com", 5, false)
-
-	if u.CanBorrowMore() {
-		t.Error("User should not be able to borrow more (max loans reached)")
-	}
-}
-
-func TestCanBorrowMoreWhenUnderLimit(t *testing.T) {
-	userId, _ := user.NewUserId("user-123")
-	u, _ := user.NewUser(userId, "John Doe", "john@example.com", 2, false)
-
-	if !u.CanBorrowMore() {
-		t.Error("User should be able to borrow more")
-	}
+	t.Run("Generate", func(t *testing.T) {
+		userId := user.GenerateUserId()
+		if userId == nil {
+			t.Fatal("GenerateUserId returned nil")
+		}
+		if len(userId.Value()) != 8 {
+			t.Errorf("Generated UserId should be 8 digits, got %d", len(userId.Value()))
+		}
+	})
 }
