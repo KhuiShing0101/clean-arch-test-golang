@@ -49,6 +49,11 @@ func ReconstructUser(
 	return &User{id, name, email, status, currentBorrowCount, overdueFees, createdAt}
 }
 
+// CanBorrow - Domain method checking eligibility
+// This method checks 3 business rules:
+// 1. User must not be suspended
+// 2. User must be within borrow limit (5 books)
+// 3. User must have no overdue fees
 func (u *User) CanBorrow() bool {
 	if u.status == UserStatusSuspended {
 		return false
