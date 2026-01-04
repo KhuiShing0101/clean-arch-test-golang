@@ -39,6 +39,18 @@ func (u *User) RecordReturn() error {
 	return nil
 }
 
+// IncrementLoanCount - increments loan count (for testing)
+func (u *User) IncrementLoanCount() {
+	u.currentLoanCount++
+}
+
+// DecrementLoanCount - decrements loan count (for testing)
+func (u *User) DecrementLoanCount() {
+	if u.currentLoanCount > 0 {
+		u.currentLoanCount--
+	}
+}
+
 // Getters
 func (u *User) GetId() UserId {
 	return u.id
