@@ -10,8 +10,15 @@ type BookQueryService interface {
 	// Returns the book read model if found, nil otherwise
 	GetBookById(bookId string) (*BookReadModel, error)
 
-	// ListBooks retrieves all books with their loan status (for Lesson 6)
+	// ListBooks retrieves paginated books with their loan status (Lesson 6)
 	//
-	// Returns array of book read models
-	ListBooks() ([]*BookReadModel, error)
+	// Parameters:
+	//   limit  - Number of items per page
+	//   offset - Number of items to skip (calculated from page number)
+	//
+	// Returns:
+	//   books - Array of book read models
+	//   total - Total count of all books (for pagination metadata)
+	//   error - Any error that occurred
+	ListBooks(limit int, offset int) ([]*BookReadModel, int, error)
 }

@@ -16,8 +16,8 @@ func (m *mockQueryService) GetBookById(bookId string) (*query.BookReadModel, err
 	return m.bookReadModel, m.err
 }
 
-func (m *mockQueryService) ListBooks() ([]*query.BookReadModel, error) {
-	return nil, nil
+func (m *mockQueryService) ListBooks(limit int, offset int) ([]*query.BookReadModel, int, error) {
+	return nil, 0, nil
 }
 
 func TestGetBookUseCase_ReturnsBookWhenAvailable(t *testing.T) {
