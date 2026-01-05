@@ -53,8 +53,11 @@ func (uc *BorrowBookUseCase) Execute(req *BorrowBookRequest) (*BorrowBookRespons
 			return err
 		}
 
-		// 4. Create new loan entity
-		l := loan.NewLoan(u.GetId(), b.GetId())
+		// 4. Create new loan entity via repository (DIP - repository creates domain entities)
+		l, err := uc.loanRepo.CreateLoan(u.GetId(), b.GetId())
+		if err != nil {
+			return err
+		}
 
 		// 5. Update user and book state
 		if err := u.RecordLoan(); err != nil {

@@ -87,6 +87,7 @@ func (l *Loan) GetReturnedAt() *time.Time {
 type ILoanRepository interface {
 	Save(loan *Loan) error
 	FindById(id LoanId) (*Loan, error)
+	CreateLoan(userId user.UserId, bookId book.BookId) (*Loan, error)
 }
 
 // BorrowingPolicyService - Domain Service for business rule validation
