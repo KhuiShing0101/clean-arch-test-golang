@@ -8,10 +8,18 @@ const (
 	LateFeePerDay = 1.0 // $1 per day late fee
 )
 
-// LateFeeCalculator - Domain Service for calculating late fees
+// ILateFeeCalculator - Domain Service interface for calculating late fees
+// This follows Dependency Inversion Principle - domain defines the contract
+type ILateFeeCalculator interface {
+	CalculateLateFee(dueDate time.Time, returnDate time.Time) float64
+	IsOverdue(dueDate time.Time, now time.Time) bool
+	GetDaysLate(dueDate time.Time, returnDate time.Time) int
+}
+
+// LateFeeCalculator - Concrete implementation of ILateFeeCalculator
 type LateFeeCalculator struct{}
 
-func NewLateFeeCalculator() *LateFeeCalculator {
+func NewLateFeeCalculator() ILateFeeCalculator {
 	return &LateFeeCalculator{}
 }
 

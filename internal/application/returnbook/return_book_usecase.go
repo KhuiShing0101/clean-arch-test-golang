@@ -24,22 +24,24 @@ type ReturnBookUseCase struct {
 	bookRepo         book.IBookRepository
 	userRepo         user.IUserRepository
 	txManager        shared.TransactionManager
-	lateFeeCalculator *loan.LateFeeCalculator
+	lateFeeCalculator loan.ILateFeeCalculator
 }
 
 // NewReturnBookUseCase creates a new use case instance
+// The lateFeeCalculator is injected as a dependency (Dependency Inversion Principle)
 func NewReturnBookUseCase(
 	loanRepo loan.ILoanRepository,
 	bookRepo book.IBookRepository,
 	userRepo user.IUserRepository,
 	txManager shared.TransactionManager,
+	lateFeeCalculator loan.ILateFeeCalculator,
 ) *ReturnBookUseCase {
 	return &ReturnBookUseCase{
 		loanRepo:         loanRepo,
 		bookRepo:         bookRepo,
 		userRepo:         userRepo,
 		txManager:        txManager,
-		lateFeeCalculator: loan.NewLateFeeCalculator(),
+		lateFeeCalculator: lateFeeCalculator,
 	}
 }
 
