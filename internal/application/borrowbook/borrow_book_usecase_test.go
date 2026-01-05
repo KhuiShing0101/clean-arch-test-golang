@@ -44,6 +44,10 @@ func (m *mockLoanRepo) FindById(id loan.LoanId) (*loan.Loan, error) {
 	return nil, nil // Not used in tests yet
 }
 
+func (m *mockLoanRepo) CreateLoan(userId user.UserId, bookId book.BookId) (*loan.Loan, error) {
+	return loan.NewLoan(userId, bookId), nil
+}
+
 type mockTxManager struct{}
 
 func (m *mockTxManager) RunInTransaction(fn func() error) error {

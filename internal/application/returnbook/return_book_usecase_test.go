@@ -26,6 +26,10 @@ func (m *mockLoanRepo) FindById(id loan.LoanId) (*loan.Loan, error) {
 	return m.loan, m.err
 }
 
+func (m *mockLoanRepo) CreateLoan(userId user.UserId, bookId book.BookId) (*loan.Loan, error) {
+	return loan.NewLoan(userId, bookId), nil
+}
+
 type mockBookRepo struct {
 	book *book.Book
 	err  error
@@ -60,6 +64,22 @@ func (m *mockTxManager) RunInTransaction(fn func() error) error {
 	return fn()
 }
 
+type mockLateFeeCalculator struct{}
+
+func (m *mockLateFeeCalculator) CalculateLateFee(dueDate time.Time, returnDate time.Time) float64 {
+	calculator := loan.NewLateFeeCalculator()
+	return calculator.CalculateLateFee(dueDate, returnDate)
+}
+
+func (m *mockLateFeeCalculator) IsOverdue(dueDate time.Time, now time.Time) bool {
+	return now.After(dueDate)
+}
+
+func (m *mockLateFeeCalculator) GetDaysLate(dueDate time.Time, returnDate time.Time) int {
+	calculator := loan.NewLateFeeCalculator()
+	return calculator.GetDaysLate(dueDate, returnDate)
+}
+
 // Helper function removed - using loan.NewLoan() instead
 
 // Test 1: Success - Return book on time (no late fee)
@@ -82,8 +102,9 @@ func TestReturnBookUseCase_Success_OnTime(t *testing.T) {
 	bookRepo := &mockBookRepo{book: testBook}
 	userRepo := &mockUserRepo{user: testUser}
 	txManager := &mockTxManager{}
+	lateFeeCalc := &mockLateFeeCalculator{}
 
-	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager)
+	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager, lateFeeCalc)
 	request := returnbook.NewReturnBookRequest(loanId)
 
 	// Act
@@ -143,8 +164,9 @@ func TestReturnBookUseCase_Success_Late(t *testing.T) {
 	bookRepo := &mockBookRepo{book: testBook}
 	userRepo := &mockUserRepo{user: testUser}
 	txManager := &mockTxManager{}
+	lateFeeCalc := &mockLateFeeCalculator{}
 
-	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager)
+	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager, lateFeeCalc)
 	request := returnbook.NewReturnBookRequest(loanId)
 
 	// Act
@@ -170,8 +192,9 @@ func TestReturnBookUseCase_LoanNotFound(t *testing.T) {
 	bookRepo := &mockBookRepo{}
 	userRepo := &mockUserRepo{}
 	txManager := &mockTxManager{}
+	lateFeeCalc := &mockLateFeeCalculator{}
 
-	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager)
+	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager, lateFeeCalc)
 	request := returnbook.NewReturnBookRequest(loan.LoanId("invalid-id"))
 
 	// Act
@@ -208,8 +231,9 @@ func TestReturnBookUseCase_LoanAlreadyReturned(t *testing.T) {
 	bookRepo := &mockBookRepo{book: testBook}
 	userRepo := &mockUserRepo{user: testUser}
 	txManager := &mockTxManager{}
+	lateFeeCalc := &mockLateFeeCalculator{}
 
-	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager)
+	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager, lateFeeCalc)
 	request := returnbook.NewReturnBookRequest(loanId)
 
 	// Act
@@ -242,8 +266,9 @@ func TestReturnBookUseCase_BookNotFound(t *testing.T) {
 	bookRepo := &mockBookRepo{book: nil, err: errors.New("not found")}
 	userRepo := &mockUserRepo{}
 	txManager := &mockTxManager{}
+	lateFeeCalc := &mockLateFeeCalculator{}
 
-	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager)
+	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager, lateFeeCalc)
 	request := returnbook.NewReturnBookRequest(loanId)
 
 	// Act
@@ -277,8 +302,9 @@ func TestReturnBookUseCase_UserNotFound(t *testing.T) {
 	bookRepo := &mockBookRepo{book: testBook}
 	userRepo := &mockUserRepo{user: nil, err: errors.New("not found")}
 	txManager := &mockTxManager{}
+	lateFeeCalc := &mockLateFeeCalculator{}
 
-	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager)
+	useCase := returnbook.NewReturnBookUseCase(loanRepo, bookRepo, userRepo, txManager, lateFeeCalc)
 	request := returnbook.NewReturnBookRequest(loanId)
 
 	// Act
